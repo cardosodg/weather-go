@@ -11,5 +11,6 @@ type WeatherData struct {
 	Temperature  float64
 	Humidity     float64
 	ApparentTemp float64
-	Timestamp    float64
+	Timestamp    string
+	Rain         float64
 }
