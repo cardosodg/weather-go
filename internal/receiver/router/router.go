@@ -22,7 +22,6 @@ func healthHandler(c *gin.Context) {
 	})
 }
 
-// https://api.open-meteo.com/v1/forecast?latitude=-20.3222&longitude=-40.3381&current=temperature_2m,relative_humidity_2m,rain,apparent_temperature
 func weatherMeasureHandler(c *gin.Context) {
 	var data model.WeatherData
 
