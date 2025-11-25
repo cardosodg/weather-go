@@ -12,9 +12,9 @@ func GetSingleWeather(
 	latitude string,
 	longitude string,
 	localtionName string,
-) (model.WeatherIncoming, error) {
+) (model.WeatherApiData, error) {
 
-	var incoming model.WeatherIncoming
+	var incoming model.WeatherApiData
 	const params string = "temperature_2m,relative_humidity_2m,rain,apparent_temperature"
 	const baseURL string = "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=%s"
 
@@ -29,7 +29,7 @@ func GetSingleWeather(
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return model.WeatherIncoming{}, fmt.Errorf("unexpected status: %s", resp.Status)
+		return model.WeatherApiData{}, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&incoming)

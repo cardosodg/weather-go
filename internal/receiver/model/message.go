@@ -1,16 +1,10 @@
 package model
 
-type Location struct {
-	Name      string
-	tag       string
-	latitude  float64
-	longitude float64
-}
-
 type WeatherData struct {
-	Temperature  float64
-	Humidity     float64
-	ApparentTemp float64
-	Timestamp    string
-	Rain         float64
+	Location     string  `json:"location"`
+	Temperature  float64 `json:"temperature_2m"`
+	Humidity     float64 `json:"relative_humidity_2m"`
+	ApparentTemp float64 `json:"apparent_temperature"`
+	Timestamp    string  `json:"time"`
+	Rain         float64 `json:"rain"`
 }

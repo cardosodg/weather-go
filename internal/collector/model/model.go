@@ -1,9 +1,9 @@
 package model
 
-type WeatherIncoming struct {
+type WeatherApiData struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	Location  string
+	Location  string  `json:"location"`
 	Current   Current `json:"current"`
 }
 

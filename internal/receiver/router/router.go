@@ -1,7 +1,10 @@
 package router
 
 import (
-	"WeatherTrack/internal/receiver/model"
+	IncomingData "WeatherTrack/internal/collector/model"
+	WeatherData "WeatherTrack/internal/receiver/model"
+	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -23,20 +26,32 @@ func healthHandler(c *gin.Context) {
 }
 
 func weatherMeasureHandler(c *gin.Context) {
-	var data model.WeatherData
+	var incomingData IncomingData.WeatherApiData
 
-	if err := c.ShouldBindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&incomingData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	data := WeatherData.WeatherData{
+		Location:     incomingData.Location,
+		Timestamp:    incomingData.Current.Timestamp,
+		Temperature:  incomingData.Current.Temperature,
+		Humidity:     incomingData.Current.Humidity,
+		Rain:         incomingData.Current.Rain,
+		ApparentTemp: incomingData.Current.ApparentTemp,
+	}
+
+	if dbg, err := json.MarshalIndent(data, "", "  "); err == nil {
+		log.Println(string(dbg))
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"received": data,
 	})
 }
 
 func weatherBatchHandler(c *gin.Context) {
-	var batch []model.WeatherData
+	var batch []WeatherData.WeatherData
 
 	if err := c.ShouldBindJSON(&batch); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
