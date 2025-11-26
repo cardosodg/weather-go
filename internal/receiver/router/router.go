@@ -51,15 +51,32 @@ func weatherMeasureHandler(c *gin.Context) {
 }
 
 func weatherBatchHandler(c *gin.Context) {
+	var incomingHistory IncomingData.WeatherApiHistory
 	var batch []WeatherData.WeatherData
 
-	if err := c.ShouldBindJSON(&batch); err != nil {
+	if err := c.ShouldBindJSON(&incomingHistory); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	batch = make([]WeatherData.WeatherData, 0, len(incomingHistory.DataList.Timestamp))
+
+	for i := range incomingHistory.DataList.Timestamp {
+		wd := WeatherData.WeatherData{
+			Location:     incomingHistory.Location,
+			Temperature:  incomingHistory.DataList.Temperature[i],
+			Humidity:     incomingHistory.DataList.Humidity[i],
+			ApparentTemp: incomingHistory.DataList.ApparentTemp[i],
+			Rain:         incomingHistory.DataList.Rain[i],
+			Timestamp:    incomingHistory.DataList.Timestamp[i],
+		}
+		batch = append(batch, wd)
+
+	}
+	log.Println(batch)
+
 	c.JSON(http.StatusOK, gin.H{
-		"received_count": len(batch),
-		"received":       batch,
+		"items":  len(batch),
+		"status": "ok",
 	})
 }
