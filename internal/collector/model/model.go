@@ -29,3 +29,9 @@ type DataList struct {
 	Rain         []float64 `json:"rain"`
 	ApparentTemp []float64 `json:"apparent_temperature"`
 }
+
+type LocationInput struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+	Label     string `json:"label"`
+}

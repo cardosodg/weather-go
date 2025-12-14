@@ -4,7 +4,6 @@ import (
 	"WeatherTrack/internal/collector/model"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -20,8 +19,6 @@ func GetSingleWeather(
 
 	url := fmt.Sprintf(baseURL, latitude, longitude, params)
 
-	log.Println(url)
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return incoming, err
@@ -35,7 +32,6 @@ func GetSingleWeather(
 	err = json.NewDecoder(resp.Body).Decode(&incoming)
 
 	incoming.Location = localtionName
-	log.Println(incoming)
 
 	return incoming, nil
 }
@@ -51,8 +47,6 @@ func GetHistoryWeather(
 
 	url := fmt.Sprintf(baseURL, latitude, longitude, params)
 
-	log.Println(url)
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return history, err
@@ -66,7 +60,6 @@ func GetHistoryWeather(
 	err = json.NewDecoder(resp.Body).Decode(&history)
 
 	history.Location = localtionName
-	log.Println(history)
 
 	return history, nil
 
