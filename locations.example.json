@@ -1,0 +1,12 @@
+[
+  {
+    "latitude": "-1.123456",
+    "longitude": "-2.123456",
+    "label": "localA"
+  },
+  {
+    "latitude": "-2.345678",
+    "longitude": "-3.345678",
+    "label": "localB"
+  }
+]
