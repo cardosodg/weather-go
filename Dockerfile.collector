@@ -1,0 +1,32 @@
+# Stage 1: Build
+FROM golang:1.25.1-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache git ca-certificates bash tzdata
+
+# Cache de dependências
+COPY go.mod go.sum ./
+# RUN go mod download
+
+# Código-fonte
+COPY . .
+
+# Build do binário
+RUN CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64 \
+    go build -o collector ./cmd/collector/main.go
+
+
+# Stage 2: Minimal runtime
+FROM alpine:latest
+
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates bash tzdata
+
+COPY --from=builder /app/collector .
+COPY --from=builder /app/locations.json .
+
+CMD ["./collector"]
