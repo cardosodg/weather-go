@@ -1,6 +1,7 @@
 package service
 
 import (
+	"WeatherTrack/internal/collector/config"
 	"WeatherTrack/internal/collector/model"
 	"encoding/json"
 	"fmt"
@@ -14,10 +15,8 @@ func GetSingleWeather(
 ) (model.WeatherApiData, error) {
 
 	var incoming model.WeatherApiData
-	const params string = "temperature_2m,relative_humidity_2m,rain,apparent_temperature"
-	const baseURL string = "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=%s"
 
-	url := fmt.Sprintf(baseURL, latitude, longitude, params)
+	url := fmt.Sprintf(config.OpenMeteoBaseURL, latitude, longitude, config.OpenMeteoParams)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -41,11 +40,10 @@ func GetHistoryWeather(
 	longitude string,
 	localtionName string,
 ) (model.WeatherApiHistory, error) {
-	var history model.WeatherApiHistory
-	const params string = "temperature_2m,relative_humidity_2m,rain,apparent_temperature"
-	const baseURL string = "https://api.open-meteo.com/v1/forecast?latitude=%s&past_days=72&longitude=%s&hourly=%s"
 
-	url := fmt.Sprintf(baseURL, latitude, longitude, params)
+	var history model.WeatherApiHistory
+
+	url := fmt.Sprintf(config.OpenMeteoHistURL, latitude, longitude, config.OpenMeteoParams)
 
 	resp, err := http.Get(url)
 	if err != nil {

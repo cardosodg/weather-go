@@ -1,6 +1,7 @@
 package service
 
 import (
+	"WeatherTrack/internal/collector/config"
 	"WeatherTrack/internal/collector/model"
 	"bytes"
 	"encoding/json"
@@ -15,7 +16,7 @@ func PostData(data model.WeatherApiData) error {
 	log.Println(string(body))
 
 	resp, err := client.Post(
-		"http://localhost:8123/data",
+		config.DataURL,
 		"application/json",
 		bytes.NewBuffer(body),
 	)
@@ -34,7 +35,7 @@ func PostHistory(data model.WeatherApiHistory) error {
 	log.Println(string(body))
 
 	resp, err := client.Post(
-		"http://localhost:8123/batch",
+		config.BatchURL,
 		"application/json",
 		bytes.NewBuffer(body),
 	)

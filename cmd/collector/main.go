@@ -1,6 +1,7 @@
 package main
 
 import (
+	"WeatherTrack/internal/collector/config"
 	"WeatherTrack/internal/collector/model"
 	"WeatherTrack/internal/collector/service"
 	"encoding/json"
@@ -10,7 +11,7 @@ import (
 )
 
 func setupInit() []model.LocationInput {
-	data_raw, err := os.ReadFile("locations.json")
+	data_raw, err := os.ReadFile(config.LocationsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
