@@ -7,7 +7,7 @@ const (
 
 	LocationsFile = "./locations.json"
 
-	BaseReceiverURL = "http://localhost:8123"
+	BaseReceiverURL = "http://receiver:8123"
 	DataPath        = "/data"
 	BatchPath       = "/batch"
 

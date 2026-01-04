@@ -11,6 +11,9 @@ import (
 )
 
 func setupInit() []model.LocationInput {
+	log.Println("Waiting 20 seconds before starting...")
+	time.Sleep(20 * time.Second)
+
 	data_raw, err := os.ReadFile(config.LocationsFile)
 	if err != nil {
 		log.Fatal(err)

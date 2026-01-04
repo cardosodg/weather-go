@@ -13,7 +13,7 @@ import (
 func PostData(data model.WeatherApiData) error {
 	client := &http.Client{Timeout: 5 * time.Second}
 	body, _ := json.Marshal(data)
-	log.Println(string(body))
+	log.Printf("Posting data: %s", string(body))
 
 	resp, err := client.Post(
 		config.DataURL,
@@ -32,7 +32,7 @@ func PostData(data model.WeatherApiData) error {
 func PostHistory(data model.WeatherApiHistory) error {
 	client := &http.Client{Timeout: 5 * time.Second}
 	body, _ := json.Marshal(data)
-	log.Println(string(body))
+	log.Printf("Posting data: %s, size: %d", data.Location, len(data.DataList.Timestamp))
 
 	resp, err := client.Post(
 		config.BatchURL,
