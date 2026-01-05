@@ -19,7 +19,7 @@ type WeatherApiHistory struct {
 	Latitude  float64  `json:"latitude"`
 	Longitude float64  `json:"longitude"`
 	Location  string   `json:"location"`
-	DataList  DataList `json:"hourly"`
+	DataList  DataList `json:"minutely_15"`
 }
 
 type DataList struct {
