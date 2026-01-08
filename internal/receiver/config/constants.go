@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+const OpenMeteoTimeLayout = "2006-01-02T15:04"
+
 type ConfigDB struct {
 	Bucket string
 	Org    string

@@ -2,8 +2,10 @@ package router
 
 import (
 	IncomingData "WeatherTrack/internal/collector/model"
+	"WeatherTrack/internal/receiver/config"
 	"WeatherTrack/internal/receiver/database"
 	WeatherData "WeatherTrack/internal/receiver/model"
+	"log"
 	"net/http"
 	"time"
 
@@ -33,9 +35,11 @@ func weatherMeasureHandler(db *database.InfluxDB) gin.HandlerFunc {
 			return
 		}
 
+		ts, _ := time.Parse(time.RFC3339, incomingData.Current.Timestamp)
+
 		data := WeatherData.WeatherData{
 			Location:     incomingData.Location,
-			Timestamp:    incomingData.Current.Timestamp,
+			Timestamp:    ts,
 			Temperature:  incomingData.Current.Temperature,
 			Humidity:     incomingData.Current.Humidity,
 			Rain:         incomingData.Current.Rain,
@@ -55,6 +59,7 @@ func weatherBatchHandler(db *database.InfluxDB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var incomingHistory IncomingData.WeatherApiHistory
 		var batch []WeatherData.WeatherData
+		var now = time.Now().UTC()
 
 		if err := c.ShouldBindJSON(&incomingHistory); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -64,13 +69,23 @@ func weatherBatchHandler(db *database.InfluxDB) gin.HandlerFunc {
 		batch = make([]WeatherData.WeatherData, 0, len(incomingHistory.DataList.Timestamp))
 
 		for i := range incomingHistory.DataList.Timestamp {
+			ts, err := time.Parse(config.OpenMeteoTimeLayout, incomingHistory.DataList.Timestamp[i])
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			if ts.After(now) {
+				continue
+			}
+
 			wd := WeatherData.WeatherData{
 				Location:     incomingHistory.Location,
 				Temperature:  incomingHistory.DataList.Temperature[i],
 				Humidity:     incomingHistory.DataList.Humidity[i],
 				ApparentTemp: incomingHistory.DataList.ApparentTemp[i],
 				Rain:         incomingHistory.DataList.Rain[i],
-				Timestamp:    incomingHistory.DataList.Timestamp[i],
+				Timestamp:    ts,
 			}
 			batch = append(batch, wd)
 

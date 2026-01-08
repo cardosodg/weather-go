@@ -69,8 +69,6 @@ func parseTimestamp(ts string) (time.Time, error) {
 func (db *InfluxDB) WriteData(data model.WeatherData) error {
 	writeAPI := db.Client.WriteAPIBlocking(db.Org, db.Bucket)
 
-	t, _ := parseTimestamp(data.Timestamp)
-
 	p := influxdb2.NewPoint(
 		"weather_readings",
 		map[string]string{
@@ -82,7 +80,7 @@ func (db *InfluxDB) WriteData(data model.WeatherData) error {
 			"rain":          data.Rain,
 			"apparent_temp": data.ApparentTemp,
 		},
-		t,
+		data.Timestamp,
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -100,7 +98,6 @@ func (db *InfluxDB) WriteBatch(data []model.WeatherData) error {
 	points := make([]*write.Point, 0, len(data))
 
 	for _, item := range data {
-		t, _ := parseTimestamp(item.Timestamp)
 
 		p := influxdb2.NewPoint(
 			"weather_readings",
@@ -113,7 +110,7 @@ func (db *InfluxDB) WriteBatch(data []model.WeatherData) error {
 				"apparent_temp": item.ApparentTemp,
 				"rain":          item.Rain,
 			},
-			t,
+			item.Timestamp,
 		)
 		points = append(points, p)
 	}
