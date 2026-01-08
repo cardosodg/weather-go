@@ -35,7 +35,7 @@ func weatherMeasureHandler(db *database.InfluxDB) gin.HandlerFunc {
 			return
 		}
 
-		ts, _ := time.Parse(time.RFC3339, incomingData.Current.Timestamp)
+		ts, _ := time.Parse(config.OpenMeteoTimeLayout, incomingData.Current.Timestamp)
 
 		data := WeatherData.WeatherData{
 			Location:     incomingData.Location,
