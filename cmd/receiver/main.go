@@ -1,6 +1,7 @@
 package main
 
 import (
+	"WeatherTrack/internal/receiver/config"
 	"WeatherTrack/internal/receiver/database"
 	"WeatherTrack/internal/receiver/router"
 	"fmt"
@@ -18,9 +19,7 @@ func main() {
 		log.Fatalf("Database not ready: %v", err)
 	}
 
-	host := "0.0.0.0"
-	port := 8123
-	address := fmt.Sprintf("%s:%d", host, port)
+	address := fmt.Sprintf("%s:%d", config.ReceiverIP, config.ReceiverPort)
 
 	r := gin.Default()
 
