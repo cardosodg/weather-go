@@ -21,9 +21,6 @@ func PostData(data model.WeatherApiForecast) error {
 		bytes.NewBuffer(body),
 	)
 	if err != nil {
-		log.Println("XXXXXXXXXXXXXXXX")
-		log.Println(err)
-		log.Println("XXXXXXXXXXXXXXXX")
 		return err
 	}
 
