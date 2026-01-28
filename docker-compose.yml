@@ -8,6 +8,14 @@ services:
     # networks:
     #   - mynet
 
+  forecast:
+    build:
+      context: .
+      dockerfile: Dockerfile.forecast
+    container_name: forecast
+    # networks:
+    #   - mynet
+
   receiver:
     build:
       context: .

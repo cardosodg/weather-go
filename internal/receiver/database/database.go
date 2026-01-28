@@ -88,7 +88,7 @@ func (db *InfluxDB) WriteData(data model.WeatherData) error {
 	return writeAPI.WritePoint(ctx, p)
 }
 
-func (db *InfluxDB) WriteBatch(data []model.WeatherData) error {
+func (db *InfluxDB) WriteBatch(data []model.WeatherData, measurement string) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -100,7 +100,7 @@ func (db *InfluxDB) WriteBatch(data []model.WeatherData) error {
 	for _, item := range data {
 
 		p := influxdb2.NewPoint(
-			"weather_readings",
+			measurement,
 			map[string]string{
 				"location": item.Location,
 			},
