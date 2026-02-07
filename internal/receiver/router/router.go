@@ -14,18 +14,28 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, db *database.InfluxDB) {
-	r.GET("/ping", healthHandler)
+	r.GET("/ping", healthHandler(db))
 	r.POST("/data", weatherMeasureHandler(db))
 	r.POST("/batch", weatherBatchHandler(db))
 	r.POST("/forecast", weatherForecastHandler(db))
 }
 
-func healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message":   "pong",
-		"status":    "ok",
-		"timestamp": time.Now().Format(time.RFC3339),
-	})
+func healthHandler(db *database.InfluxDB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		status := "ok"
+		httpStatus := http.StatusOK
+
+		if err := db.IsReady(); err != nil {
+			status = "nok"
+			httpStatus = http.StatusServiceUnavailable
+		}
+
+		c.JSON(httpStatus, gin.H{
+			"message":   "pong",
+			"status":    status,
+			"timestamp": time.Now().Format(time.RFC3339),
+		})
+	}
 }
 
 func weatherMeasureHandler(db *database.InfluxDB) gin.HandlerFunc {

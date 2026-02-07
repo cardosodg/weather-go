@@ -31,20 +31,27 @@ func Initialize() (*InfluxDB, error) {
 		Bucket: bucket,
 	}
 
-	if err := isReady(db); err != nil {
-		return nil, err
-	}
+	err := db.IsReady()
 
-	return db, nil
+	return db, err
 }
 
-func isReady(db *InfluxDB) error {
+func (db *InfluxDB) IsReady() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := db.Client.Ready(ctx)
+	queryAPI := db.Client.QueryAPI(db.Org)
 
-	return err
+	result, err := queryAPI.Query(ctx, "buckets() |> limit(n:1)")
+	if err != nil {
+		return fmt.Errorf("influxdb not ready: %w", err)
+	}
+
+	if result.Err() != nil {
+		return fmt.Errorf("flux error: %w", result.Err())
+	}
+
+	return nil
 }
 
 func parseTimestamp(ts string) (time.Time, error) {

@@ -16,7 +16,7 @@ func main() {
 	db, err := database.Initialize()
 
 	if err != nil {
-		log.Fatalf("Database not ready: %v", err)
+		log.Print(err)
 	}
 
 	address := fmt.Sprintf("%s:%d", config.ReceiverIP, config.ReceiverPort)
