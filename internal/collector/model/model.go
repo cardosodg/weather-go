@@ -35,3 +35,9 @@ type LocationInput struct {
 	Longitude string `json:"longitude"`
 	Label     string `json:"label"`
 }
+
+type HealthCheck struct {
+	Message   string `json:"message"`
+	Status    string `json:"status"`
+	Timestamp string `json:"timestamp"`
+}

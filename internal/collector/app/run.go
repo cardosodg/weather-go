@@ -12,8 +12,8 @@ import (
 )
 
 func setupInit() []model.LocationInput {
-	log.Println("Waiting 30 seconds before starting...")
-	time.Sleep(30 * time.Second)
+	log.Println("Starting collector")
+	time.Sleep(5 * time.Second)
 
 	data_raw, err := os.ReadFile(config.LocationsFile)
 	if err != nil {
@@ -111,9 +111,39 @@ func fetchCurrent(locations []model.LocationInput) {
 	}
 }
 
+func checkReceiver() bool {
+
+	for i := 1; i <= config.ReceiverMaxRetries; i++ {
+		healthCheck, err := service.GetHealth()
+		if err != nil {
+			log.Printf("health check attempt %d/%d error: %v", i, config.ReceiverMaxRetries, err)
+			time.Sleep(config.ReceiverRetryInterval)
+			continue
+		}
+
+		if healthCheck.Status == "ok" {
+			log.Printf("receiver healthy on attempt %d", i)
+			return true
+		}
+
+		log.Printf("receiver not ready (status=%s) attempt %d/%d",
+			healthCheck.Status,
+			i,
+			config.ReceiverMaxRetries,
+		)
+
+		time.Sleep(config.ReceiverRetryInterval)
+	}
+
+	log.Printf("receiver did not become healthy after %d attempts", config.ReceiverMaxRetries)
+	return false
+}
+
 func Run() {
 	locations := setupInit()
 
-	fetchHistory(locations)
-	fetchCurrent(locations)
+	if checkReceiver() {
+		fetchHistory(locations)
+		fetchCurrent(locations)
+	}
 }
