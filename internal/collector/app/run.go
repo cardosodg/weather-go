@@ -12,7 +12,7 @@ import (
 )
 
 func setupInit() []model.LocationInput {
-	log.Println("Starting collector")
+	log.Println("Starting collector...")
 	time.Sleep(5 * time.Second)
 
 	data_raw, err := os.ReadFile(config.LocationsFile)

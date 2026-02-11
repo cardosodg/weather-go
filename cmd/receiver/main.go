@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	fmt.Println("receiver")
+	log.Println("Starting receiver...")
 
 	db, err := database.Initialize()
 
