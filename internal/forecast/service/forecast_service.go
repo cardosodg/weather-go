@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func GetSingleWeather(
+func GetForecastWeather(
 	latitude string,
 	longitude string,
 	localtionName string,

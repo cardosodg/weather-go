@@ -37,7 +37,7 @@ func fetchWithRetry(loc model.LocationInput) (model.WeatherApiForecast, error) {
 	var lastErr error
 
 	for range 3 {
-		data, err := service.GetSingleWeather(loc.Latitude, loc.Longitude, loc.Label)
+		data, err := service.GetForecastWeather(loc.Latitude, loc.Longitude, loc.Label)
 		if err == nil {
 			log.Printf("Data fetched for location %s", loc.Label)
 			return data, nil
@@ -98,7 +98,37 @@ func fetchForecast(locations []model.LocationInput) {
 	log.Println("All data collected.")
 }
 
+func checkReceiver() bool {
+
+	for i := 1; i <= config.ReceiverMaxRetries; i++ {
+		healthCheck, err := service.GetHealth()
+		if err != nil {
+			log.Printf("health check attempt %d/%d error: %v", i, config.ReceiverMaxRetries, err)
+			time.Sleep(config.ReceiverRetryInterval)
+			continue
+		}
+
+		if healthCheck.Status == "ok" {
+			log.Printf("receiver healthy on attempt %d", i)
+			return true
+		}
+
+		log.Printf("receiver not ready (status=%s) attempt %d/%d",
+			healthCheck.Status,
+			i,
+			config.ReceiverMaxRetries,
+		)
+
+		time.Sleep(config.ReceiverRetryInterval)
+	}
+
+	log.Printf("receiver did not become healthy after %d attempts", config.ReceiverMaxRetries)
+	return false
+}
+
 func Run() {
 	locations := setupInit()
-	fetchForecast(locations)
+	if checkReceiver() {
+		fetchForecast(locations)
+	}
 }
