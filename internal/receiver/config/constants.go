@@ -5,8 +5,6 @@ import (
 	"os"
 )
 
-const OpenMeteoTimeLayout = "2006-01-02T15:04"
-
 const ReceiverIP = "0.0.0.0"
 const ReceiverPort = 8123
 

@@ -1,12 +1,8 @@
 package router
 
 import (
-	IncomingData "WeatherTrack/internal/collector/model"
-	IncomingForecast "WeatherTrack/internal/forecast/model"
-	"WeatherTrack/internal/receiver/config"
 	"WeatherTrack/internal/receiver/database"
-	WeatherData "WeatherTrack/internal/receiver/model"
-	"log"
+	"WeatherTrack/internal/receiver/model"
 	"net/http"
 	"time"
 
@@ -40,22 +36,11 @@ func healthHandler(db *database.InfluxDB) gin.HandlerFunc {
 
 func weatherMeasureHandler(db *database.InfluxDB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var incomingData IncomingData.WeatherApiData
+		var data model.WeatherDTO
 
-		if err := c.ShouldBindJSON(&incomingData); err != nil {
+		if err := c.ShouldBindJSON(&data); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
-		}
-
-		ts, _ := time.Parse(config.OpenMeteoTimeLayout, incomingData.Current.Timestamp)
-
-		data := WeatherData.WeatherData{
-			Location:     incomingData.Location,
-			Timestamp:    ts,
-			Temperature:  incomingData.Current.Temperature,
-			Humidity:     incomingData.Current.Humidity,
-			Rain:         incomingData.Current.Rain,
-			ApparentTemp: incomingData.Current.ApparentTemp,
 		}
 
 		if err := db.WriteData(data); err != nil {
@@ -69,38 +54,26 @@ func weatherMeasureHandler(db *database.InfluxDB) gin.HandlerFunc {
 
 func weatherBatchHandler(db *database.InfluxDB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var incomingHistory IncomingData.WeatherApiHistory
-		var batch []WeatherData.WeatherData
-		var now = time.Now().UTC()
+		var batch []model.WeatherDTO
 
-		if err := c.ShouldBindJSON(&incomingHistory); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err := c.ShouldBindJSON(&batch); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"items":   0,
+				"message": err.Error(),
+			})
+
 			return
 		}
 
-		batch = make([]WeatherData.WeatherData, 0, len(incomingHistory.DataList.Timestamp))
+		if len(batch) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"items":   0,
+				"message": "empty batch",
+			})
 
-		for i := range incomingHistory.DataList.Timestamp {
-			ts, err := time.Parse(config.OpenMeteoTimeLayout, incomingHistory.DataList.Timestamp[i])
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-
-			if ts.After(now) {
-				continue
-			}
-
-			wd := WeatherData.WeatherData{
-				Location:     incomingHistory.Location,
-				Temperature:  incomingHistory.DataList.Temperature[i],
-				Humidity:     incomingHistory.DataList.Humidity[i],
-				ApparentTemp: incomingHistory.DataList.ApparentTemp[i],
-				Rain:         incomingHistory.DataList.Rain[i],
-				Timestamp:    ts,
-			}
-			batch = append(batch, wd)
-
+			return
 		}
 
 		if err := db.WriteBatch(batch, "weather_readings"); err != nil {
@@ -111,46 +84,35 @@ func weatherBatchHandler(db *database.InfluxDB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"items":  len(batch),
-			"status": "ok",
+			"items":   len(batch),
+			"status":  "ok",
+			"message": "ok",
 		})
 	}
 }
 
 func weatherForecastHandler(db *database.InfluxDB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var forecast IncomingForecast.WeatherApiForecast
-		var batch []WeatherData.WeatherData
-		var now = time.Now().UTC()
+		var batch []model.WeatherDTO
 
-		if err := c.ShouldBindJSON(&forecast); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err := c.ShouldBindJSON(&batch); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"items":   0,
+				"message": err.Error(),
+			})
+
 			return
 		}
 
-		batch = make([]WeatherData.WeatherData, 0, len(forecast.DataList.Timestamp))
+		if len(batch) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"items":   0,
+				"message": "empty batch",
+			})
 
-		for i := range forecast.DataList.Timestamp {
-			ts, err := time.Parse(config.OpenMeteoTimeLayout, forecast.DataList.Timestamp[i])
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-
-			if ts.Before(now) {
-				continue
-			}
-
-			wd := WeatherData.WeatherData{
-				Location:     forecast.Location,
-				Temperature:  forecast.DataList.Temperature[i],
-				Humidity:     forecast.DataList.Humidity[i],
-				ApparentTemp: forecast.DataList.ApparentTemp[i],
-				Rain:         forecast.DataList.Rain[i],
-				Timestamp:    ts,
-			}
-			batch = append(batch, wd)
-
+			return
 		}
 
 		if err := db.WriteBatch(batch, "forecast_readings"); err != nil {
@@ -161,8 +123,9 @@ func weatherForecastHandler(db *database.InfluxDB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"items":  len(batch),
-			"status": "ok",
+			"items":   len(batch),
+			"status":  "ok",
+			"message": "ok",
 		})
 	}
 }

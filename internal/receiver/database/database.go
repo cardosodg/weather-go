@@ -54,26 +54,26 @@ func (db *InfluxDB) IsReady() error {
 	return nil
 }
 
-func parseTimestamp(ts string) (time.Time, error) {
-	formats := []string{
-		time.RFC3339,
-		"2006-01-02T15:04",
-		"2006-01-02T15:04:05",
-		"2006-01-02T15:04:05Z07:00",
-		"2006-01-02 15:04:05",
-	}
+// func parseTimestamp(ts string) (time.Time, error) {
+// 	formats := []string{
+// 		time.RFC3339,
+// 		"2006-01-02T15:04",
+// 		"2006-01-02T15:04:05",
+// 		"2006-01-02T15:04:05Z07:00",
+// 		"2006-01-02 15:04:05",
+// 	}
 
-	for _, layout := range formats {
-		t, err := time.Parse(layout, ts)
-		if err == nil {
-			return t, nil
-		}
-	}
+// 	for _, layout := range formats {
+// 		t, err := time.Parse(layout, ts)
+// 		if err == nil {
+// 			return t, nil
+// 		}
+// 	}
 
-	return time.Time{}, fmt.Errorf("timestamp inválido: %s", ts)
-}
+// 	return time.Time{}, fmt.Errorf("timestamp inválido: %s", ts)
+// }
 
-func (db *InfluxDB) WriteData(data model.WeatherData) error {
+func (db *InfluxDB) WriteData(data model.WeatherDTO) error {
 	writeAPI := db.Client.WriteAPIBlocking(db.Org, db.Bucket)
 
 	p := influxdb2.NewPoint(
@@ -84,7 +84,7 @@ func (db *InfluxDB) WriteData(data model.WeatherData) error {
 		map[string]any{
 			"temperature":   data.Temperature,
 			"humidity":      data.Humidity,
-			"rain":          data.Rain,
+			"precipitation": data.Precipitation,
 			"apparent_temp": data.ApparentTemp,
 		},
 		data.Timestamp,
@@ -95,7 +95,7 @@ func (db *InfluxDB) WriteData(data model.WeatherData) error {
 	return writeAPI.WritePoint(ctx, p)
 }
 
-func (db *InfluxDB) WriteBatch(data []model.WeatherData, measurement string) error {
+func (db *InfluxDB) WriteBatch(data []model.WeatherDTO, measurement string) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -115,7 +115,7 @@ func (db *InfluxDB) WriteBatch(data []model.WeatherData, measurement string) err
 				"temperature":   item.Temperature,
 				"humidity":      item.Humidity,
 				"apparent_temp": item.ApparentTemp,
-				"rain":          item.Rain,
+				"precipitation": item.Precipitation,
 			},
 			item.Timestamp,
 		)

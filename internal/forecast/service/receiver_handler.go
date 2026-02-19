@@ -2,19 +2,24 @@ package service
 
 import (
 	"WeatherTrack/internal/forecast/config"
-	"WeatherTrack/internal/forecast/model"
+	receiverModel "WeatherTrack/internal/receiver/model"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 )
 
-func GetHealth() (model.HealthCheck, error) {
+type HealthCheck struct {
+	Message   string `json:"message"`
+	Status    string `json:"status"`
+	Timestamp string `json:"timestamp"`
+}
+
+func GetHealth() (HealthCheck, error) {
 	client := &http.Client{Timeout: 5 * time.Second}
 
-	var healthCheck model.HealthCheck
+	var healthCheck HealthCheck
 
 	resp, err := client.Get(config.HealthURL)
 	if err != nil {
@@ -34,10 +39,18 @@ func GetHealth() (model.HealthCheck, error) {
 
 }
 
-func PostData(data model.WeatherApiForecast) error {
-	client := &http.Client{Timeout: 5 * time.Second}
-	body, _ := json.Marshal(data)
-	log.Printf("Posting data: %s", string(body))
+func PostForecast(data []receiverModel.WeatherDTO) error {
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	body, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
 
 	resp, err := client.Post(
 		config.ForecastURL,
@@ -47,8 +60,11 @@ func PostData(data model.WeatherApiForecast) error {
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 
 	return nil
 }

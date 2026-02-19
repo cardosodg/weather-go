@@ -1,64 +1,52 @@
 package service
 
 import (
-	"WeatherTrack/internal/collector/config"
-	"WeatherTrack/internal/collector/model"
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"WeatherTrack/internal/collector/provider/openmeteo"
+	receiverModel "WeatherTrack/internal/receiver/model"
 )
 
 func GetSingleWeather(
 	latitude string,
 	longitude string,
-	localtionName string,
-) (model.WeatherApiData, error) {
+	locationName string,
+) (receiverModel.WeatherDTO, error) {
 
-	var incoming model.WeatherApiData
-
-	url := fmt.Sprintf(config.OpenMeteoBaseURL, latitude, longitude, config.OpenMeteoParams)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return incoming, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return model.WeatherApiData{}, fmt.Errorf("unexpected status: %s", resp.Status)
-	}
-
-	err = json.NewDecoder(resp.Body).Decode(&incoming)
-
-	incoming.Location = localtionName
-
-	return incoming, nil
+	return openmeteo.GetOpenMeteoCurrent(
+		latitude,
+		longitude,
+		locationName,
+	)
 }
 
 func GetHistoryWeather(
 	latitude string,
 	longitude string,
-	localtionName string,
-) (model.WeatherApiHistory, error) {
+	locationName string,
+) ([]receiverModel.WeatherDTO, error) {
 
-	var history model.WeatherApiHistory
-
-	url := fmt.Sprintf(config.OpenMeteoHistURL, latitude, longitude, config.OpenMeteoParams)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return history, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return history, fmt.Errorf("unexpected status: %s", resp.Status)
-	}
-
-	err = json.NewDecoder(resp.Body).Decode(&history)
-
-	history.Location = localtionName
-
-	return history, nil
-
+	return openmeteo.GetOpenMeteoHistory(
+		latitude,
+		longitude,
+		locationName,
+	)
 }
+
+// Future implementation
+// func GetSingleWeather(
+// 	latitude string,
+// 	longitude string,
+// 	locationName string,
+// ) (receiverModel.WeatherDTO, error) {
+
+// 	switch config.Provider {
+// 	case "openmeteo":
+// 		return provider.GetOpenMeteoCurrent(latitude, longitude, locationName)
+
+// 	case "weatherapi":
+// 		return provider.GetWeatherAPICurrent(latitude, longitude, locationName)
+
+// 	default:
+// 		return receiverModel.WeatherDTO{},
+// 			fmt.Errorf("unknown provider: %s", config.Provider)
+// 	}
+// }

@@ -2,26 +2,33 @@ package app
 
 import (
 	"WeatherTrack/internal/collector/config"
-	"WeatherTrack/internal/collector/model"
 	"WeatherTrack/internal/collector/service"
+	receiverModel "WeatherTrack/internal/receiver/model"
+	"sync"
+
 	"encoding/json"
 	"log"
 	"os"
-	"sync"
 	"time"
 )
 
-func setupInit() []model.LocationInput {
+type LocationInput struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+	Label     string `json:"label"`
+}
+
+func setupInit() []LocationInput {
 	log.Println("Starting collector...")
 	time.Sleep(5 * time.Second)
 
-	data_raw, err := os.ReadFile(config.LocationsFile)
+	dataRaw, err := os.ReadFile(config.LocationsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var locations []model.LocationInput
-	if err = json.Unmarshal(data_raw, &locations); err != nil {
+	var locations []LocationInput
+	if err = json.Unmarshal(dataRaw, &locations); err != nil {
 		log.Fatal(err)
 	}
 
@@ -29,22 +36,32 @@ func setupInit() []model.LocationInput {
 	for _, loc := range locations {
 		log.Println(loc.Label, loc.Latitude, loc.Longitude)
 	}
+
 	return locations
 }
 
-func fetchHistory(locations []model.LocationInput) {
-	log.Println("Querying history data...")
+func fetchHistory(locations []LocationInput) {
+	log.Println("Starting history data fetch and transmission...")
 	time.Sleep(5 * time.Second)
-	for _, loc := range locations {
 
-		hist, _ := service.GetHistoryWeather(loc.Latitude, loc.Longitude, loc.Label)
-		service.PostHistory(hist)
+	for _, loc := range locations {
+		hist, err := service.GetHistoryWeather(loc.Latitude, loc.Longitude, loc.Label)
+		if err != nil {
+			log.Printf("Failed to fetch history for %s: %v", loc.Label, err)
+			continue
+		}
+
+		if err := service.PostHistory(hist); err != nil {
+			log.Printf("Failed to send history for %s: %v", loc.Label, err)
+		}
 	}
+	log.Println("History data fetch and transmission completed.")
 }
 
-func fetchWithRetry(loc model.LocationInput) (model.WeatherApiData, error) {
+func fetchWithRetry(loc LocationInput) (receiverModel.WeatherDTO, error) {
 
 	var lastErr error
+	var dto receiverModel.WeatherDTO
 
 	for range 3 {
 		data, err := service.GetSingleWeather(loc.Latitude, loc.Longitude, loc.Label)
@@ -52,14 +69,17 @@ func fetchWithRetry(loc model.LocationInput) (model.WeatherApiData, error) {
 			log.Printf("Data fetched for location %s", loc.Label)
 			return data, nil
 		}
+
 		lastErr = err
 		log.Printf("Failed to fetch data for %s. Retrying.", loc.Label)
 		time.Sleep(1 * time.Second)
 	}
-	return model.WeatherApiData{}, lastErr
+
+	return dto, lastErr
 }
 
-func sendWithRetry(data model.WeatherApiData) error {
+func sendWithRetry(data receiverModel.WeatherDTO) error {
+
 	var lastErr error
 
 	for range 5 {
@@ -68,6 +88,7 @@ func sendWithRetry(data model.WeatherApiData) error {
 			log.Printf("Data sent for location %s", data.Location)
 			return nil
 		}
+
 		lastErr = err
 		log.Printf("Failed to send data for location %s. Retrying.", data.Location)
 		time.Sleep(300 * time.Millisecond)
@@ -76,20 +97,19 @@ func sendWithRetry(data model.WeatherApiData) error {
 	return lastErr
 }
 
-func fetchSingleLocation(loc model.LocationInput) {
+func fetchSingleLocation(loc LocationInput) {
 	data, err := fetchWithRetry(loc)
 	if err != nil {
 		log.Printf("WARN failed fetch for %s: %v", loc.Label, err)
 		return
 	}
 
-	err = sendWithRetry(data)
-	if err != nil {
+	if err := sendWithRetry(data); err != nil {
 		log.Printf("WARN failed send for %s: %v", loc.Label, err)
 	}
 }
 
-func fetchCurrent(locations []model.LocationInput) {
+func fetchCurrent(locations []LocationInput) {
 	log.Println("Querying current data...")
 	time.Sleep(5 * time.Second)
 
@@ -102,21 +122,22 @@ func fetchCurrent(locations []model.LocationInput) {
 				defer wg.Done()
 				fetchSingleLocation(loc)
 			}()
-
 		}
+
 		log.Println("Waiting for all locations to complete.")
 		wg.Wait()
 		log.Println("All data collected.")
-		time.Sleep(config.OpenMeteoWaitTime * time.Minute)
+
+		time.Sleep(config.CollectorWaitTime * time.Minute)
 	}
 }
 
 func checkReceiver() bool {
-
 	for i := 1; i <= config.ReceiverMaxRetries; i++ {
 		healthCheck, err := service.GetHealth()
 		if err != nil {
-			log.Printf("health check attempt %d/%d error: %v", i, config.ReceiverMaxRetries, err)
+			log.Printf("health check attempt %d/%d error: %v",
+				i, config.ReceiverMaxRetries, err)
 			time.Sleep(config.ReceiverRetryInterval)
 			continue
 		}
@@ -135,7 +156,9 @@ func checkReceiver() bool {
 		time.Sleep(config.ReceiverRetryInterval)
 	}
 
-	log.Printf("receiver did not become healthy after %d attempts", config.ReceiverMaxRetries)
+	log.Printf("receiver did not become healthy after %d attempts",
+		config.ReceiverMaxRetries)
+
 	return false
 }
 
