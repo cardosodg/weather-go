@@ -87,6 +87,7 @@ func GetOpenMeteoHistory(
 
 	var apiResp openMeteoHistory
 	var result []receiverModel.WeatherDTO
+	var now = time.Now().UTC()
 
 	url := fmt.Sprintf(
 		OpenMeteoHistURL,
@@ -113,7 +114,11 @@ func GetOpenMeteoHistory(
 
 		ts, err := time.Parse(OpenMeteoTimeLayout, apiResp.Minutely15.Time[i])
 		if err != nil {
-			continue // ignora timestamp inválido
+			continue
+		}
+
+		if ts.After(now) {
+			continue
 		}
 
 		dto := receiverModel.WeatherDTO{
