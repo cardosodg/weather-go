@@ -60,13 +60,11 @@ func GetOpenMeteoCurrent(
 		return dto, err
 	}
 
-	// 🔥 Parse timestamp aqui
 	ts, err := time.Parse(OpenMeteoTimeLayout, apiResp.Current.Time)
 	if err != nil {
 		return dto, err
 	}
 
-	// 🔥 Mapping para DTO
 	dto = receiverModel.WeatherDTO{
 		Location:      label,
 		Timestamp:     ts,
