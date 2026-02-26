@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile.collector
     container_name: collector
     restart: unless-stopped
+    environment:
+      WEATHERAPIKEY: ${WEATHER_API_KEY}
     # networks:
     #   - mynet
 
@@ -13,6 +15,8 @@ services:
       context: .
       dockerfile: Dockerfile.forecast
     container_name: forecast
+    environment:
+      WEATHERAPIKEY: ${WEATHER_API_KEY}
     # networks:
     #   - mynet
 
