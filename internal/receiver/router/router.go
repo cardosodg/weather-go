@@ -115,6 +115,13 @@ func weatherForecastHandler(db *database.InfluxDB) gin.HandlerFunc {
 			return
 		}
 
+		if err := db.DeleteMeasurement("forecast_readings", batch[0].Location); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		if err := db.WriteBatch(batch, "forecast_readings"); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),

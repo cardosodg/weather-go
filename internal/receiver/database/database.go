@@ -54,25 +54,6 @@ func (db *InfluxDB) IsReady() error {
 	return nil
 }
 
-// func parseTimestamp(ts string) (time.Time, error) {
-// 	formats := []string{
-// 		time.RFC3339,
-// 		"2006-01-02T15:04",
-// 		"2006-01-02T15:04:05",
-// 		"2006-01-02T15:04:05Z07:00",
-// 		"2006-01-02 15:04:05",
-// 	}
-
-// 	for _, layout := range formats {
-// 		t, err := time.Parse(layout, ts)
-// 		if err == nil {
-// 			return t, nil
-// 		}
-// 	}
-
-// 	return time.Time{}, fmt.Errorf("timestamp inválido: %s", ts)
-// }
-
 func (db *InfluxDB) WriteData(data model.WeatherDTO) error {
 	writeAPI := db.Client.WriteAPIBlocking(db.Org, db.Bucket)
 
@@ -127,4 +108,30 @@ func (db *InfluxDB) WriteBatch(data []model.WeatherDTO, measurement string) erro
 
 	return writeAPI.WritePoint(ctx, points...)
 
+}
+
+func (db *InfluxDB) DeleteMeasurement(measurement string, location string) error {
+	if measurement == "" || location == "" {
+		return fmt.Errorf("measurement and location cannot be empty")
+	}
+
+	deleteAPI := db.Client.DeleteAPI()
+	start := time.Unix(0, 0)
+	stop := time.Now().AddDate(200, 0, 0)
+
+	predicate := fmt.Sprintf(
+		`_measurement="%s" AND location="%s"`,
+		measurement,
+		location,
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := deleteAPI.DeleteWithName(ctx, db.Org, db.Bucket, start, stop, predicate)
+	if err != nil {
+		return fmt.Errorf("failed to delete measurement %s: %w", measurement, err)
+	}
+
+	return nil
 }
