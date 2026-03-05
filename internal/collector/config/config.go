@@ -6,7 +6,7 @@ const (
 	// possible values: openmeteo or weatherapi
 	Provider = "weatherapi"
 
-	CollectorWaitTime = 15
+	CollectorWaitTime = 20
 
 	LocationsFile = "./locations.json"
 
