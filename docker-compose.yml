@@ -7,8 +7,8 @@ services:
     restart: unless-stopped
     environment:
       WEATHERAPIKEY: ${WEATHER_API_KEY}
-    # networks:
-    #   - mynet
+    networks:
+      - weather_net
 
   forecast:
     build:
@@ -17,8 +17,8 @@ services:
     container_name: forecast
     environment:
       WEATHERAPIKEY: ${WEATHER_API_KEY}
-    # networks:
-    #   - mynet
+    networks:
+      - weather_net
 
   receiver:
     build:
@@ -28,8 +28,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    # networks:
-    #   - mynet
+    networks:
+      - weather_net
 
   influxdb:
     image: influxdb:latest
@@ -37,10 +37,10 @@ services:
     restart: unless-stopped
     ports:
       - "8086:8086"
-    # volumes:
-    #   - ./influxdb_data:/var/lib/influxdb2
-    # networks:
-    #   - mynet
+    volumes:
+      - ./influxdb_data:/var/lib/influxdb2
+    networks:
+      - weather_net
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=${INFLUXDB_MODE}
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME}
@@ -49,3 +49,8 @@ services:
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
       #- DOCKER_INFLUXDB_INIT_RETENTION=30d
+
+networks:
+  weather_net:
+    driver: bridge
+    name: weather_net
