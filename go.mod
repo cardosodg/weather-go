@@ -1,6 +1,6 @@
 module WeatherTrack
 
-go 1.26.1
+go 1.26.4
 
 require (
 	github.com/gin-gonic/gin v1.11.0
