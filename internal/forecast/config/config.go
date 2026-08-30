@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// possible values: openmeteo or weatherapi
-	Provider = "weatherapi"
+	Provider = "openmeteo"
 
 	LocationsFile = "./locations.json"
 
