@@ -147,20 +147,62 @@ func GetOpenMeteoCurrent(
 	return dto, nil
 }
 
+func evaluateHistoryGridAt(
+	incoming []openMeteoHistory,
+	index int,
+	label string,
+	ts time.Time,
+) (receiverModel.WeatherDTO, bool) {
+	var totalTemp, totalHumidity, totalRain, totalApparent float64
+
+	for j, point := range incoming {
+		if j >= len(OpenMeteoWeights) {
+			break
+		}
+
+		if index >= len(point.Minutely15.Temperature) {
+			return receiverModel.WeatherDTO{}, false
+		}
+
+		weight := OpenMeteoWeights[j]
+
+		totalTemp += point.Minutely15.Temperature[index] * weight
+		totalHumidity += point.Minutely15.Humidity[index] * weight
+		totalRain += point.Minutely15.Rain[index] * weight
+		totalApparent += point.Minutely15.ApparentTemperature[index] * weight
+	}
+
+	dto := receiverModel.WeatherDTO{
+		Location:      label,
+		Timestamp:     ts,
+		Temperature:   totalTemp,
+		Humidity:      totalHumidity,
+		Precipitation: totalRain,
+		ApparentTemp:  totalApparent,
+	}
+
+	return dto, true
+}
+
 func GetOpenMeteoHistory(
 	lat string,
 	lon string,
 	label string,
 ) ([]receiverModel.WeatherDTO, error) {
 
-	var apiResp openMeteoHistory
+	var apiResp []openMeteoHistory
 	var result []receiverModel.WeatherDTO
 	var now = time.Now().UTC()
 
+	lats, lons, err := buildGrid(lat, lon)
+	if err != nil {
+		return result, err
+	}
+
 	url := fmt.Sprintf(
 		OpenMeteoHistURL,
-		lat,
-		lon,
+		lats,
+		lons,
 		OpenMeteoParams,
 	)
 
@@ -178,9 +220,14 @@ func GetOpenMeteoHistory(
 		return result, err
 	}
 
-	for i := range apiResp.Minutely15.Time {
+	if len(apiResp) == 0 {
+		return result, fmt.Errorf("empty response from open-meteo history grid")
+	}
 
-		ts, err := time.Parse(OpenMeteoTimeLayout, apiResp.Minutely15.Time[i])
+	referenceTimestamps := apiResp[0].Minutely15.Time
+
+	for i := range referenceTimestamps {
+		ts, err := time.Parse(OpenMeteoTimeLayout, referenceTimestamps[i])
 		if err != nil {
 			continue
 		}
@@ -189,13 +236,9 @@ func GetOpenMeteoHistory(
 			continue
 		}
 
-		dto := receiverModel.WeatherDTO{
-			Location:      label,
-			Timestamp:     ts,
-			Temperature:   apiResp.Minutely15.Temperature[i],
-			Humidity:      apiResp.Minutely15.Humidity[i],
-			Precipitation: apiResp.Minutely15.Rain[i],
-			ApparentTemp:  apiResp.Minutely15.ApparentTemperature[i],
+		dto, ok := evaluateHistoryGridAt(apiResp, i, label, ts)
+		if !ok {
+			continue
 		}
 
 		result = append(result, dto)
