@@ -4,6 +4,7 @@ import (
 	receiverModel "WeatherTrack/internal/receiver/model"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"strconv"
@@ -134,12 +135,21 @@ func GetOpenMeteoCurrent(
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return dto, fmt.Errorf("unexpected status: %s", resp.Status)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return dto, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return dto, err
+	if resp.StatusCode != http.StatusOK {
+		return dto, fmt.Errorf("openmeteo error [status %d]: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	if err := json.Unmarshal(bodyBytes, &apiResp); err != nil {
+		return dto, fmt.Errorf("failed to decode json: %v | raw response: %s", err, string(bodyBytes))
+	}
+
+	if len(apiResp) == 0 {
+		return dto, fmt.Errorf("empty response from open-meteo current grid")
 	}
 
 	dto = EvaluateGridAverage(apiResp, label)
@@ -212,12 +222,17 @@ func GetOpenMeteoHistory(
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("unexpected status: %s", resp.Status)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return result, fmt.Errorf("failed to read history response body: %v", err)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return result, err
+	if resp.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("openmeteo history error [status %d]: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	if err := json.Unmarshal(bodyBytes, &apiResp); err != nil {
+		return result, fmt.Errorf("failed to decode history json: %v | raw response: %s", err, string(bodyBytes))
 	}
 
 	if len(apiResp) == 0 {
