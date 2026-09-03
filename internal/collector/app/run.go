@@ -4,6 +4,7 @@ import (
 	"WeatherTrack/internal/collector/config"
 	"WeatherTrack/internal/collector/service"
 	receiverModel "WeatherTrack/internal/receiver/model"
+	"math/rand"
 	"sync"
 
 	"encoding/json"
@@ -63,7 +64,10 @@ func fetchWithRetry(loc LocationInput) (receiverModel.WeatherDTO, error) {
 	var lastErr error
 	var dto receiverModel.WeatherDTO
 
-	for range 3 {
+	maxAttempts := 4
+	baseSleep := 2 * time.Second
+
+	for i := range maxAttempts {
 		data, err := service.GetSingleWeather(loc.Latitude, loc.Longitude, loc.Label)
 		if err == nil {
 			log.Printf("Data fetched for location %s", loc.Label)
@@ -71,8 +75,21 @@ func fetchWithRetry(loc LocationInput) (receiverModel.WeatherDTO, error) {
 		}
 
 		lastErr = err
-		log.Printf("Failed to fetch data for %s. Retrying.", loc.Label)
-		time.Sleep(1 * time.Second)
+
+		if i == maxAttempts-1 {
+			break
+		}
+
+		multiplier := time.Duration(1 << uint(i))
+		sleepDuration := baseSleep * multiplier
+
+		jitter := time.Duration(rand.Intn(1000)) * time.Millisecond
+		totalSleep := sleepDuration + jitter
+
+		log.Printf("Failed to fetch data for %s (attempt %d/%d). Retrying in %v...",
+			loc.Label, i+1, maxAttempts, totalSleep)
+
+		time.Sleep(totalSleep)
 	}
 
 	return dto, lastErr
