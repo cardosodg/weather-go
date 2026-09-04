@@ -31,11 +31,11 @@ type openMeteoCurrent struct {
 
 type openMeteoHistory struct {
 	Minutely15 struct {
-		Time                []string  `json:"time"`
-		Temperature         []float64 `json:"temperature_2m"`
-		Humidity            []float64 `json:"relative_humidity_2m"`
-		Rain                []float64 `json:"rain"`
-		ApparentTemperature []float64 `json:"apparent_temperature"`
+		Time                []string   `json:"time"`
+		Temperature         []*float64 `json:"temperature_2m"`
+		Humidity            []*float64 `json:"relative_humidity_2m"`
+		Rain                []*float64 `json:"rain"`
+		ApparentTemperature []*float64 `json:"apparent_temperature"`
 	} `json:"minutely_15"`
 }
 
@@ -174,12 +174,21 @@ func evaluateHistoryGridAt(
 			return receiverModel.WeatherDTO{}, false
 		}
 
+		tempPtr := point.Minutely15.Temperature[index]
+		humPtr := point.Minutely15.Humidity[index]
+		rainPtr := point.Minutely15.Rain[index]
+		appPtr := point.Minutely15.ApparentTemperature[index]
+
+		if tempPtr == nil || humPtr == nil || rainPtr == nil || appPtr == nil {
+			return receiverModel.WeatherDTO{}, false
+		}
+
 		weight := OpenMeteoWeights[j]
 
-		totalTemp += point.Minutely15.Temperature[index] * weight
-		totalHumidity += point.Minutely15.Humidity[index] * weight
-		totalRain += point.Minutely15.Rain[index] * weight
-		totalApparent += point.Minutely15.ApparentTemperature[index] * weight
+		totalTemp += *tempPtr * weight
+		totalHumidity += *humPtr * weight
+		totalRain += *rainPtr * weight
+		totalApparent += *appPtr * weight
 	}
 
 	dto := receiverModel.WeatherDTO{
