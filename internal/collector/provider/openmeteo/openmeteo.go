@@ -24,7 +24,7 @@ type openMeteoCurrent struct {
 		Time                string  `json:"time"`
 		Temperature         float64 `json:"temperature_2m"`
 		Humidity            float64 `json:"relative_humidity_2m"`
-		Rain                float64 `json:"rain"`
+		Precipitation       float64 `json:"precipitation"`
 		ApparentTemperature float64 `json:"apparent_temperature"`
 	} `json:"current"`
 }
@@ -34,7 +34,7 @@ type openMeteoHistory struct {
 		Time                []string   `json:"time"`
 		Temperature         []*float64 `json:"temperature_2m"`
 		Humidity            []*float64 `json:"relative_humidity_2m"`
-		Rain                []*float64 `json:"rain"`
+		Precipitation       []*float64 `json:"precipitation"`
 		ApparentTemperature []*float64 `json:"apparent_temperature"`
 	} `json:"minutely_15"`
 }
@@ -81,7 +81,7 @@ func buildGrid(latitude string, longitude string) (string, string, error) {
 
 func EvaluateGridAverage(responses []openMeteoCurrent, label string) receiverModel.WeatherDTO {
 	var dto receiverModel.WeatherDTO
-	var totalTemp, totalHumidity, totalRain, totalApparent float64
+	var totalTemp, totalHumidity, totalPrecip, totalApparent float64
 
 	for i, resp := range responses {
 		if i >= len(OpenMeteoWeights) {
@@ -92,7 +92,7 @@ func EvaluateGridAverage(responses []openMeteoCurrent, label string) receiverMod
 
 		totalTemp += resp.Current.Temperature * weight
 		totalHumidity += resp.Current.Humidity * weight
-		totalRain += resp.Current.Rain * weight
+		totalPrecip += resp.Current.Precipitation * weight
 		totalApparent += resp.Current.ApparentTemperature * weight
 	}
 
@@ -103,7 +103,7 @@ func EvaluateGridAverage(responses []openMeteoCurrent, label string) receiverMod
 		Timestamp:     ts,
 		Temperature:   totalTemp,
 		Humidity:      totalHumidity,
-		Precipitation: totalRain,
+		Precipitation: totalPrecip,
 		ApparentTemp:  totalApparent,
 	}
 
@@ -163,7 +163,7 @@ func evaluateHistoryGridAt(
 	label string,
 	ts time.Time,
 ) (receiverModel.WeatherDTO, bool) {
-	var totalTemp, totalHumidity, totalRain, totalApparent float64
+	var totalTemp, totalHumidity, totalPrecip, totalApparent float64
 
 	for j, point := range incoming {
 		if j >= len(OpenMeteoWeights) {
@@ -176,10 +176,10 @@ func evaluateHistoryGridAt(
 
 		tempPtr := point.Minutely15.Temperature[index]
 		humPtr := point.Minutely15.Humidity[index]
-		rainPtr := point.Minutely15.Rain[index]
+		precipPtr := point.Minutely15.Precipitation[index]
 		appPtr := point.Minutely15.ApparentTemperature[index]
 
-		if tempPtr == nil || humPtr == nil || rainPtr == nil || appPtr == nil {
+		if tempPtr == nil || humPtr == nil || precipPtr == nil || appPtr == nil {
 			return receiverModel.WeatherDTO{}, false
 		}
 
@@ -187,7 +187,7 @@ func evaluateHistoryGridAt(
 
 		totalTemp += *tempPtr * weight
 		totalHumidity += *humPtr * weight
-		totalRain += *rainPtr * weight
+		totalPrecip += *precipPtr * weight
 		totalApparent += *appPtr * weight
 	}
 
@@ -196,7 +196,7 @@ func evaluateHistoryGridAt(
 		Timestamp:     ts,
 		Temperature:   totalTemp,
 		Humidity:      totalHumidity,
-		Precipitation: totalRain,
+		Precipitation: totalPrecip,
 		ApparentTemp:  totalApparent,
 	}
 
