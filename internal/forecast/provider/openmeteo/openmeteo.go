@@ -22,11 +22,11 @@ type openMeteoForecast struct {
 	Longitude float64 `json:"longitude"`
 	Location  string  `json:"location"`
 	DataList  struct {
-		Timestamp    []string  `json:"time"`
-		Temperature  []float64 `json:"temperature_2m"`
-		Humidity     []float64 `json:"relative_humidity_2m"`
-		Rain         []float64 `json:"rain"`
-		ApparentTemp []float64 `json:"apparent_temperature"`
+		Timestamp     []string  `json:"time"`
+		Temperature   []float64 `json:"temperature_2m"`
+		Humidity      []float64 `json:"relative_humidity_2m"`
+		Precipitation []float64 `json:"precipitation"`
+		ApparentTemp  []float64 `json:"apparent_temperature"`
 	} `json:"hourly"`
 }
 
@@ -76,7 +76,7 @@ func evaluateForecastGridAt(
 	locationName string,
 	ts time.Time,
 ) (receiverModel.WeatherDTO, bool) {
-	var totalTemp, totalHumidity, totalApparent, totalRain float64
+	var totalTemp, totalHumidity, totalApparent, totalPrecip float64
 
 	for j, point := range incoming {
 		if j >= len(OpenMeteoWeights) {
@@ -92,7 +92,7 @@ func evaluateForecastGridAt(
 		totalTemp += point.DataList.Temperature[index] * weight
 		totalHumidity += point.DataList.Humidity[index] * weight
 		totalApparent += point.DataList.ApparentTemp[index] * weight
-		totalRain += point.DataList.Rain[index] * weight
+		totalPrecip += point.DataList.Precipitation[index] * weight
 	}
 
 	wd := receiverModel.WeatherDTO{
@@ -100,7 +100,7 @@ func evaluateForecastGridAt(
 		Temperature:   totalTemp,
 		Humidity:      totalHumidity,
 		ApparentTemp:  totalApparent,
-		Precipitation: totalRain,
+		Precipitation: totalPrecip,
 		Timestamp:     ts,
 	}
 
