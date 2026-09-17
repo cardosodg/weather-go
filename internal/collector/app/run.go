@@ -4,6 +4,7 @@ import (
 	"WeatherTrack/internal/collector/config"
 	"WeatherTrack/internal/collector/service"
 	receiverModel "WeatherTrack/internal/receiver/model"
+	"flag"
 	"math/rand"
 	"sync"
 
@@ -180,10 +181,20 @@ func checkReceiver() bool {
 }
 
 func Run() {
+	runHistory := flag.Bool("run-history", false, "Executes only the history data fetch")
+
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+
 	locations := setupInit()
 
 	if checkReceiver() {
-		fetchHistory(locations)
+		if *runHistory {
+			fetchHistory(locations)
+			return
+		}
+
 		fetchCurrent(locations)
 	}
 }

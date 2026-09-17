@@ -29,4 +29,8 @@ RUN apk add --no-cache ca-certificates bash tzdata
 COPY --from=builder /app/collector .
 COPY --from=builder /app/locations.json .
 
-CMD ["./collector"]
+# Define o binário como entrypoint fixo
+ENTRYPOINT ["./collector"]
+
+# (Opcional) CMD padrão caso nenhum argumento seja passado
+CMD []
